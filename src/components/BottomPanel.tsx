@@ -80,8 +80,8 @@ export function BottomPanel({
   return (
     <section className="flex flex-col h-full min-h-0 bg-[var(--bg-panel)] border-t border-[var(--border-subtle)]">
       {/* 탭 바 */}
-      <div className="ide-chrome flex items-center justify-between px-2 py-1 border-b border-[var(--border-subtle)] bg-[var(--bg-root)] shrink-0">
-        <div className="flex items-center gap-1 overflow-x-auto">
+      <div className="ide-chrome flex items-center justify-between gap-2 px-2 py-1 border-b border-[var(--border-subtle)] bg-[var(--bg-root)] shrink-0">
+        <div className="flex items-center gap-1 overflow-x-auto min-w-0 flex-1">
           <button
             type="button"
             onClick={() => {
