@@ -371,6 +371,37 @@ export async function saveSession(session: WorkspaceSession): Promise<void> {
   }
 }
 
+export async function replaceWorkspaceInDB(
+  projects: Project[],
+  files: FileNode[],
+  settings: AppSettings,
+  session: WorkspaceSession,
+  layout?: LayoutState
+): Promise<void> {
+  const now = Date.now();
+  saveWorkspaceSnapshotSync({
+    projects,
+    files,
+    settings,
+    session,
+    layout,
+    savedAt: now,
+  });
+  try {
+    const db = await getDB();
+    await writeFullStateToIDB(db, {
+      projects,
+      files,
+      settings,
+      session,
+      layout,
+      savedAt: now,
+    });
+  } catch {
+    // localStorage 스냅샷에 이미 저장됨
+  }
+}
+
 export async function saveLayout(layout: LayoutState): Promise<void> {
   try {
     const db = await getDB();

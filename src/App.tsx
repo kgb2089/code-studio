@@ -20,8 +20,8 @@ import {
   exportAllProjectsAsZip,
   exportProjectAsZip,
   exportSingleFile,
+  importBackupZip,
   importLooseFiles,
-  importProjectFromZip,
 } from './storage/backup';
 import {
   deleteFileNodes,
@@ -29,6 +29,7 @@ import {
   getRelativePath,
   loadWorkspaceSnapshotSync,
   loadWorkspaceState,
+  replaceWorkspaceInDB,
   saveFileNode,
   saveFileNodes,
   saveLayout,
@@ -786,7 +787,47 @@ export function App() {
   const handleImportProjectZip = useCallback(
     async (file: File) => {
       try {
-        const { project, files: importedFiles } = await importProjectFromZip(file);
+        const imported = await importBackupZip(file);
+        if (imported.kind === 'all') {
+          const fileCount = imported.files.filter((f) => f.type === 'file').length;
+          setDialog({
+            kind: 'confirm',
+            title: '전체 백업 복원',
+            message: `프로젝트 ${imported.projects.length}개, 파일 ${fileCount}개가 포함된 전체 백업입니다.\n현재 워크스페이스를 이 백업으로 복원하시겠습니까?`,
+            confirmLabel: '복원하기',
+            onConfirm: async () => {
+              const firstProj = imported.projects.find((p) => !p.isExample) || imported.projects[0];
+              const firstFile =
+                imported.files.find((f) => f.projectId === firstProj.id && f.type === 'file') ||
+                imported.files.find((f) => f.type === 'file') ||
+                null;
+              const nextLang: Language = firstFile?.name.endsWith('.c') ? 'c' : 'python';
+              const nextSession = {
+                activeProjectId: firstProj.id,
+                activeFileId: firstFile?.id || null,
+                openFileIds: firstFile ? [firstFile.id] : [],
+                recentFileIds: firstFile ? [firstFile.id] : [],
+                language: nextLang,
+                stdin: '',
+                testCases,
+              };
+              setProjects(imported.projects);
+              setFiles(imported.files);
+              setActiveProjectId(nextSession.activeProjectId);
+              setActiveFileId(nextSession.activeFileId);
+              setOpenFileIds(nextSession.openFileIds);
+              setRecentFileIds(nextSession.recentFileIds);
+              setLanguage(nextLang);
+              setSidebarTab('explorer');
+              setSettingsOpen(false);
+              await replaceWorkspaceInDB(imported.projects, imported.files, settings, nextSession);
+              showToast(`전체 백업 복원 완료! (프로젝트 ${imported.projects.length}개, 파일 ${fileCount}개)`);
+            },
+          });
+          return;
+        }
+
+        const { project, files: importedFiles } = imported;
         setProjects((prev) => [...prev, project]);
         setFiles((prev) => [...prev, ...importedFiles]);
         setActiveProjectId(project.id);
@@ -794,6 +835,7 @@ export function App() {
         setActiveFileId(first?.id || null);
         setOpenFileIds(first ? [first.id] : []);
         setSidebarTab('explorer');
+        setSettingsOpen(false);
         await saveProject(project);
         await saveFileNodes(importedFiles);
         showToast(`"${project.name}" (${importedFiles.length}개 항목) 복원 완료!`);
@@ -801,7 +843,7 @@ export function App() {
         showToast(`ZIP 복원 실패: ${err instanceof Error ? err.message : '알 수 없는 오류'}`);
       }
     },
-    [showToast]
+    [settings, testCases, showToast]
   );
 
   // 학습 모드 예제/연습 코드를 사용자 프로젝트로 복사
@@ -1397,6 +1439,7 @@ export function App() {
           await exportAllProjectsAsZip(projects, files);
           showToast('전체 워크스페이스 ZIP 백업을 다운로드했습니다.');
         }}
+        onImportBackupZip={handleImportProjectZip}
         onOpenDialog={setDialog}
       />
 

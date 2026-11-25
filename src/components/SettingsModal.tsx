@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import {
   Archive,
   CheckCircle2,
@@ -6,6 +7,7 @@ import {
   RefreshCw,
   ShieldCheck,
   Trash2,
+  Upload,
   X,
 } from 'lucide-react';
 import { formatBytes } from '../engines/engineManager';
@@ -24,6 +26,7 @@ interface SettingsModalProps {
   onClearReinstallEngine: (lang: Language) => void;
   onResetWorker: (lang: Language) => void;
   onExportAllBackup: () => void;
+  onImportBackupZip: (file: File) => void;
   onOpenDialog: (dialog: DialogRequest) => void;
 }
 
@@ -50,8 +53,11 @@ export function SettingsModal({
   onClearReinstallEngine,
   onResetWorker,
   onExportAllBackup,
+  onImportBackupZip,
   onOpenDialog,
 }: SettingsModalProps) {
+  const backupInputRef = useRef<HTMLInputElement | null>(null);
+
   if (!open) return null;
 
   const renderEngineCard = (lang: Language, title: string, status: EngineStatus) => {
@@ -281,25 +287,48 @@ export function SettingsModal({
             </div>
           </section>
 
-          {/* 3. 개인정보 보호 & 데이터 백업 */}
-          <section className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* 3. 개인정보 보호 & 데이터 백업/복원 */}
+          <section className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex flex-col gap-3">
             <div className="space-y-1">
               <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
                 <ShieldCheck className="w-4 h-4" />
-                <span>100% 로컬 실행 · 브라우저 데이터 보호</span>
+                <span>100% 로컬 실행 · 데이터 백업 및 복원</span>
               </div>
-              <p className="text-[11px] text-[var(--text-secondary)] m-0">
-                모든 코드는 외부 서버로 전송되지 않고 기기 내부 IndexedDB에 저장됩니다. iPadOS 저장소 정리에 대비해 주기적으로 ZIP 백업을 권장합니다.
+              <p className="text-[11px] text-[var(--text-secondary)] m-0 leading-relaxed">
+                모든 코드는 기기 내부에만 저장됩니다. iPadOS 정책상 <strong>Safari</strong>와{' '}
+                <strong>홈 화면 웹앱</strong>의 저장소는 서로 분리되어 있으므로, 웹앱을 새로 추가하거나 기기를 옮길 때{' '}
+                <strong>전체 백업 (ZIP)</strong>으로 저장한 뒤 <strong>백업 불러오기 (ZIP)</strong>로 복원하세요.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={onExportAllBackup}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs shrink-0"
-            >
-              <Archive className="w-3.5 h-3.5" />
-              <span>전체 백업 (ZIP)</span>
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={onExportAllBackup}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs shrink-0"
+              >
+                <Archive className="w-3.5 h-3.5" />
+                <span>전체 백업 (ZIP)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => backupInputRef.current?.click()}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-300 font-semibold text-xs shrink-0"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>백업 불러오기 (ZIP)</span>
+              </button>
+              <input
+                ref={backupInputRef}
+                type="file"
+                accept=".zip,application/zip"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) onImportBackupZip(file);
+                  e.target.value = '';
+                }}
+              />
+            </div>
           </section>
 
           {/* 4. 오픈소스 라이선스 */}

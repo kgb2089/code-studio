@@ -178,6 +178,35 @@ export async function importProjectFromZip(
 }
 
 /**
+ * 전체 백업 ZIP (code-studio-all-v1) 또는 단일 프로젝트 ZIP을 자동 판별하여 복원합니다.
+ */
+export async function importBackupZip(
+  file: File
+): Promise<
+  | { kind: 'all'; projects: Project[]; files: FileNode[] }
+  | { kind: 'project'; project: Project; files: FileNode[] }
+> {
+  const zip = await JSZip.loadAsync(file);
+  const fullEntry = zip.file('code-studio-workspace.json');
+  if (fullEntry) {
+    const parsed = JSON.parse(await fullEntry.async('string')) as {
+      format?: string;
+      projects?: Project[];
+      files?: FileNode[];
+    };
+    if (Array.isArray(parsed?.projects) && parsed.projects.length > 0 && Array.isArray(parsed?.files)) {
+      return {
+        kind: 'all',
+        projects: parsed.projects,
+        files: parsed.files,
+      };
+    }
+  }
+  const single = await importProjectFromZip(file);
+  return { kind: 'project', ...single };
+}
+
+/**
  * 선택한 로컬 텍스트/코드 파일들을 읽어 FileNode 배열로 변환합니다.
  */
 export async function importLooseFiles(

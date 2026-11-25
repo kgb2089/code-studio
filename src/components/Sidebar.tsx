@@ -470,10 +470,48 @@ export function Sidebar({
           <div className="scroll-pane flex-1 p-1.5 space-y-0.5">
             {renderTree(null, 0)}
             {projectFiles.length === 0 && (
-              <p className="text-xs text-[var(--text-muted)] text-center py-6">
-                파일이 없습니다. 상단 + 버튼으로 파일을 추가하세요.
-              </p>
+              <div className="text-xs text-[var(--text-muted)] text-center py-6 space-y-2.5 px-2">
+                <p className="m-0">파일이 없습니다. 새 파일을 만들거나 파일 앱에서 불러오세요.</p>
+                <div className="flex items-center justify-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handlePromptCreate('file')}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] font-medium text-[11px]"
+                  >
+                    <FilePlus className="w-3.5 h-3.5 text-sky-400" />
+                    <span>새 파일</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 font-medium text-[11px]"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>파일 불러오기</span>
+                  </button>
+                </div>
+              </div>
             )}
+          </div>
+
+          {/* 하단 빠른 파일 추가 / 불러오기 바 */}
+          <div className="grid grid-cols-2 gap-1.5 p-2 border-t border-[var(--border-subtle)] bg-[var(--bg-root)]/60 shrink-0">
+            <button
+              type="button"
+              onClick={() => handlePromptCreate('file')}
+              className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[11px] font-medium text-[var(--text-primary)]"
+            >
+              <FilePlus className="w-3.5 h-3.5 text-sky-400" />
+              <span>새 파일</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[11px] font-medium text-[var(--text-primary)]"
+            >
+              <Upload className="w-3.5 h-3.5 text-emerald-400" />
+              <span>파일 불러오기</span>
+            </button>
           </div>
 
           {/* 최근 작업 파일 */}
