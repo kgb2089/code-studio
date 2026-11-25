@@ -1,0 +1,50 @@
+{
+  "name": "code-studio",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Code Studio — iPad-first offline Python & C17 IDE with Execution Tracing and Algorithm Visualization",
+  "type": "module",
+  "scripts": {
+    "setup:engines": "node scripts/copy-engines.mjs",
+    "setup:icons": "node scripts/generate-icons.mjs",
+    "predev": "node scripts/copy-engines.mjs",
+    "dev": "vite",
+    "prebuild": "node scripts/copy-engines.mjs",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@bjorn3/browser_wasi_shim": "^0.4.2",
+    "@codemirror/autocomplete": "^6.18.6",
+    "@codemirror/commands": "^6.8.1",
+    "@codemirror/lang-cpp": "^6.0.3",
+    "@codemirror/lang-python": "^6.1.7",
+    "@codemirror/language": "^6.11.0",
+    "@codemirror/lint": "^6.8.5",
+    "@codemirror/search": "^6.5.10",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/theme-one-dark": "^6.1.2",
+    "@codemirror/view": "^6.36.5",
+    "@yowasp/clang": "22.0.0-git20695-13",
+    "codemirror": "^6.0.1",
+    "idb": "^8.0.2",
+    "jszip": "^3.10.1",
+    "lucide-react": "^0.487.0",
+    "pyodide": "latest",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.3",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react": "^4.4.1",
+    "jsdom": "^26.1.0",
+    "tailwindcss": "^4.1.3",
+    "typescript": "^5.8.3",
+    "vite": "^6.2.6",
+    "vitest": "^3.1.1"
+  }
+}

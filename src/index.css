@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+:root {
+  --app-height: 100dvh;
+  --bg-root: #0f172a;
+  --bg-panel: #111827;
+  --bg-surface: #1e293b;
+  --bg-elevated: #273549;
+  --bg-hover: #334155;
+  --border-subtle: #1f2937;
+  --border-strong: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent: #38bdf8;
+  --accent-strong: #0284c7;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --trace-line-bg: rgba(56, 189, 248, 0.22);
+  --trace-line-border: #38bdf8;
+}
+
+html.light {
+  --bg-root: #f8fafc;
+  --bg-panel: #f1f5f9;
+  --bg-surface: #ffffff;
+  --bg-elevated: #e2e8f0;
+  --bg-hover: #cbd5e1;
+  --border-subtle: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --accent: #0284c7;
+  --accent-strong: #0369a1;
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --trace-line-bg: rgba(2, 132, 199, 0.16);
+  --trace-line-border: #0284c7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: var(--app-height, 100dvh);
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background-color: var(--bg-root);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 앱 크롬(버튼/탭/메뉴)은 터치 조작 최적화, 에디터·출력은 텍스트 선택 허용 */
+.ide-chrome {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.selectable-text {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* 독립 스크롤 영역 */
+.scroll-pane {
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 세련된 얇은 스크롤바 */
+.scroll-pane::-webkit-scrollbar,
+.cm-scroller::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-pane::-webkit-scrollbar-track,
+.cm-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-pane::-webkit-scrollbar-thumb,
+.cm-scroller::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.28);
+  border-radius: 999px;
+}
+.scroll-pane::-webkit-scrollbar-thumb:hover,
+.cm-scroller::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.48);
+}
+
+/* Safe Area 대응 */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.safe-left {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+.safe-right {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* CodeMirror 6 커스텀 스타일 */
+.cm-editor {
+  height: 100% !important;
+  outline: none !important;
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace !important;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.cm-scroller {
+  overflow: auto !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.cm-active-trace-line {
+  background-color: var(--trace-line-bg) !important;
+  box-shadow: inset 3px 0 0 var(--trace-line-border);
+}
+
+.cm-error-line {
+  background-color: rgba(248, 113, 113, 0.14) !important;
+}
