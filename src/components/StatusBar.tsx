@@ -28,7 +28,7 @@ export function StatusBar({
   const activeCached = language === 'python' ? pythonEngine.cached : cEngine.cached;
 
   return (
-    <footer className="ide-chrome safe-bottom flex items-center justify-between gap-2 px-2.5 py-1 text-[11px] border-t border-[var(--border-subtle)] bg-[var(--bg-root)] text-[var(--text-secondary)] shrink-0">
+    <footer className="ide-chrome safe-bottom flex items-center justify-between gap-2 px-2.5 pt-1 text-[11px] border-t border-[var(--border-subtle)] bg-[var(--bg-root)] text-[var(--text-secondary)] shrink-0">
       <div className="flex items-center gap-3 min-w-0">
         <span className="font-semibold text-[var(--accent)]">
           {language === 'python' ? 'Python 3 (Pyodide)' : 'C17 (Clang/LLVM)'}

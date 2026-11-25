@@ -2,7 +2,7 @@ import { Component, StrictMode, type ErrorInfo, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
-import { registerServiceWorker } from './utils/pwa';
+import { isStandaloneMode, registerServiceWorker } from './utils/pwa';
 
 interface ErrorBoundaryState {
   error: Error | null;
@@ -44,6 +44,10 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryS
 }
 
 (window as any).__CS_BOOT_STAGE = 'main.tsx 로드 완료 (React 마운트 중)';
+
+if (isStandaloneMode()) {
+  document.documentElement.classList.add('pwa-standalone');
+}
 
 registerServiceWorker();
 

@@ -99,12 +99,20 @@ body,
   background: rgba(148, 163, 184, 0.48);
 }
 
-/* Safe Area 대응 */
+/* Safe Area 대응 (iPadOS standalone 상태표시줄 및 멀티태스킹 버튼 겹침 방지) */
 .safe-top {
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
+}
+@media (display-mode: standalone) {
+  .safe-top {
+    padding-top: max(calc(env(safe-area-inset-top, 0px) + 8px), 30px);
+  }
+}
+html.pwa-standalone .safe-top {
+  padding-top: max(calc(env(safe-area-inset-top, 0px) + 8px), 30px);
 }
 .safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
 }
 .safe-left {
   padding-left: env(safe-area-inset-left, 0px);
