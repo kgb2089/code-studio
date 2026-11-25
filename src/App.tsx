@@ -27,6 +27,7 @@ import {
   deleteFileNodes,
   deleteProjectFromDB,
   getRelativePath,
+  loadWorkspaceSnapshotSync,
   loadWorkspaceState,
   saveFileNode,
   saveFileNodes,
@@ -34,6 +35,7 @@ import {
   saveProject,
   saveSession,
   saveSettings,
+  saveWorkspaceSnapshotSync,
 } from './storage/db';
 import { createInitialData, DEFAULT_SETTINGS } from './storage/defaults';
 import type {
@@ -71,7 +73,8 @@ const INITIAL_ENGINE_STATUS: EngineStatus = {
 };
 
 export function App() {
-  const initialData = useMemo(() => createInitialData(), []);
+  const bootSnapshot = useMemo(() => loadWorkspaceSnapshotSync(), []);
+  const initialData = useMemo(() => bootSnapshot ?? createInitialData(), [bootSnapshot]);
   const [hydrated, setHydrated] = useState(false);
   const [projects, setProjects] = useState<Project[]>(initialData.projects);
   const [files, setFiles] = useState<FileNode[]>(initialData.files);
@@ -81,26 +84,26 @@ export function App() {
   const [recentFileIds, setRecentFileIds] = useState<string[]>(initialData.session.recentFileIds);
   const [language, setLanguage] = useState<Language>(initialData.session.language);
   const [stdin, setStdin] = useState(initialData.session.stdin);
-  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<AppSettings>(bootSnapshot?.settings ?? DEFAULT_SETTINGS);
 
   // 레이아웃 상태
   const viewport = useVisualViewport();
   const isCompact = viewport.width < 768;
   const isNarrowSidebar = viewport.width < 960;
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 960);
+  const [sidebarOpen, setSidebarOpen] = useState(() => bootSnapshot?.layout?.sidebarOpen ?? window.innerWidth >= 960);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('explorer');
-  const [sidebarWidth, setSidebarWidth] = useState(245);
-  const [rightPanelOpen, setRightPanelOpen] = useState(() => window.innerWidth >= 900);
+  const [sidebarWidth, setSidebarWidth] = useState(() => bootSnapshot?.layout?.sidebarWidth ?? 245);
+  const [rightPanelOpen, setRightPanelOpen] = useState(() => bootSnapshot?.layout?.rightPanelOpen ?? window.innerWidth >= 900);
   const [rightPanelMode, setRightPanelMode] = useState<RightPanelMode>('trace');
-  const [rightPanelWidth, setRightPanelWidth] = useState(() =>
-    Math.min(460, Math.max(320, Math.round(window.innerWidth * 0.4)))
+  const [rightPanelWidth, setRightPanelWidth] = useState(
+    () => bootSnapshot?.layout?.rightPanelWidth ?? Math.min(460, Math.max(320, Math.round(window.innerWidth * 0.4)))
   );
-  const [portraitVizHeight, setPortraitVizHeight] = useState(() =>
-    Math.max(240, Math.round(window.innerHeight * 0.44))
+  const [portraitVizHeight, setPortraitVizHeight] = useState(
+    () => bootSnapshot?.layout?.portraitVizHeight ?? Math.max(240, Math.round(window.innerHeight * 0.44))
   );
   const [bottomTab, setBottomTab] = useState<BottomTab>('output');
-  const [bottomCollapsed, setBottomCollapsed] = useState(false);
-  const [bottomHeight, setBottomHeight] = useState(195);
+  const [bottomCollapsed, setBottomCollapsed] = useState(() => bootSnapshot?.layout?.bottomCollapsed ?? false);
+  const [bottomHeight, setBottomHeight] = useState(() => bootSnapshot?.layout?.bottomHeight ?? 195);
   const [resizingAxis, setResizingAxis] = useState<'sidebar' | 'right' | 'bottom' | 'portraitViz' | null>(null);
   const [fullscreen, setFullscreen] = useState<FullscreenMode>('none');
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -114,9 +117,12 @@ export function App() {
   const [execResult, setExecResult] = useState<ExecutionResult | null>(null);
   const [traceResult, setTraceResult] = useState<TraceResult | null>(null);
   const [traceStepIdx, setTraceStepIdx] = useState(0);
-  const [testCases, setTestCases] = useState<TestCase[]>([
-    { id: 'tc-default-1', name: '테스트 #1', input: '', expectedOutput: '' },
-  ]);
+  const [testCases, setTestCases] = useState<TestCase[]>(
+    () =>
+      bootSnapshot?.session?.testCases && bootSnapshot.session.testCases.length > 0
+        ? bootSnapshot.session.testCases
+        : [{ id: 'tc-default-1', name: '테스트 #1', input: '', expectedOutput: '' }]
+  );
   const [testResults, setTestResults] = useState<TestCaseRunResult[]>([]);
   const [cursor, setCursor] = useState({ line: 1, col: 1 });
   const [toast, setToast] = useState<string | null>(null);
@@ -138,6 +144,11 @@ export function App() {
   const editorRef = useRef<EditorPaneHandle | null>(null);
   const runtimeRef = useRef<RuntimeController | null>(null);
   const saveTimerRef = useRef<number | null>(null);
+  const pendingSaveNodeRef = useRef<FileNode | null>(null);
+  const filesRef = useRef<FileNode[]>(files);
+  const projectsRef = useRef<Project[]>(projects);
+  filesRef.current = files;
+  projectsRef.current = projects;
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -282,6 +293,78 @@ export function App() {
     bottomCollapsed,
   ]);
 
+  // 5-1. 모든 워크스페이스 변경을 localStorage 스냅샷에 즉시 동기 백업 (iPadOS 앱 강제 종료 / IDB 지연 대비)
+  useEffect(() => {
+    if (!hydrated || resizingAxis !== null) return;
+    saveWorkspaceSnapshotSync({
+      projects,
+      files,
+      settings,
+      session: {
+        activeProjectId,
+        activeFileId,
+        openFileIds,
+        recentFileIds,
+        language,
+        stdin,
+        testCases,
+      },
+      layout: {
+        sidebarWidth,
+        rightPanelWidth,
+        bottomHeight,
+        portraitVizHeight,
+        sidebarOpen,
+        rightPanelOpen,
+        bottomCollapsed,
+      },
+    });
+  }, [
+    hydrated,
+    resizingAxis,
+    projects,
+    files,
+    settings,
+    activeProjectId,
+    activeFileId,
+    openFileIds,
+    recentFileIds,
+    language,
+    stdin,
+    testCases,
+    sidebarWidth,
+    rightPanelWidth,
+    bottomHeight,
+    portraitVizHeight,
+    sidebarOpen,
+    rightPanelOpen,
+    bottomCollapsed,
+  ]);
+
+  // 5-2. 앱 전환·종료 직전 대기 중인 파일 저장 즉시 플러시
+  useEffect(() => {
+    const flushPendingSave = () => {
+      if (saveTimerRef.current) {
+        window.clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      if (pendingSaveNodeRef.current) {
+        const node = pendingSaveNodeRef.current;
+        pendingSaveNodeRef.current = null;
+        saveFileNode(node).catch(() => {});
+      }
+    };
+    const onVisChange = () => {
+      if (document.visibilityState === 'hidden') flushPendingSave();
+    };
+    window.addEventListener('pagehide', flushPendingSave);
+    document.addEventListener('visibilitychange', onVisChange);
+    return () => {
+      window.removeEventListener('pagehide', flushPendingSave);
+      document.removeEventListener('visibilitychange', onVisChange);
+    };
+  }, []);
+
   // 파생 데이터
   const activeFile = useMemo(
     () => files.find((f) => f.id === activeFileId) || null,
@@ -347,26 +430,29 @@ export function App() {
     [activeFileId]
   );
 
-  // 코드 편집 및 IndexedDB 자동 저장
+  // 코드 편집 및 IndexedDB + localStorage 자동 저장
   const handleChangeContent = useCallback(
     (fileId: string, newContent: string) => {
       const now = Date.now();
-      let updatedNode: FileNode | null = null;
+      const current = filesRef.current.find((f) => f.id === fileId);
+      const updatedNode: FileNode | null = current
+        ? { ...current, content: newContent, updatedAt: now }
+        : null;
+
       setFiles((prev) =>
-        prev.map((f) => {
-          if (f.id !== fileId) return f;
-          updatedNode = { ...f, content: newContent, updatedAt: now };
-          return updatedNode;
-        })
+        prev.map((f) => (f.id === fileId ? { ...f, content: newContent, updatedAt: now } : f))
       );
       // 코드가 수정되면 기존 추적 결과는 오래된 스냅샷이므로 해제
       setTraceResult(null);
 
-      if (settings.autoSave) {
+      if (settings.autoSave && updatedNode) {
+        pendingSaveNodeRef.current = updatedNode;
         if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
         saveTimerRef.current = window.setTimeout(() => {
-          if (updatedNode) saveFileNode(updatedNode).catch(() => {});
-        }, 350);
+          const toSave = pendingSaveNodeRef.current;
+          pendingSaveNodeRef.current = null;
+          if (toSave) saveFileNode(toSave).catch(() => {});
+        }, 150);
       }
     },
     [settings.autoSave]
@@ -573,27 +659,19 @@ export function App() {
   );
 
   const handleRenameNode = useCallback(async (nodeId: string, newName: string) => {
-    let target: FileNode | null = null;
-    setFiles((prev) =>
-      prev.map((f) => {
-        if (f.id !== nodeId) return f;
-        target = { ...f, name: newName, updatedAt: Date.now() };
-        return target;
-      })
-    );
-    if (target) await saveFileNode(target);
+    const current = filesRef.current.find((f) => f.id === nodeId);
+    if (!current) return;
+    const target: FileNode = { ...current, name: newName, updatedAt: Date.now() };
+    setFiles((prev) => prev.map((f) => (f.id === nodeId ? target : f)));
+    await saveFileNode(target);
   }, []);
 
   const handleMoveNode = useCallback(async (nodeId: string, targetParentId: string | null) => {
-    let target: FileNode | null = null;
-    setFiles((prev) =>
-      prev.map((f) => {
-        if (f.id !== nodeId) return f;
-        target = { ...f, parentId: targetParentId, updatedAt: Date.now() };
-        return target;
-      })
-    );
-    if (target) await saveFileNode(target);
+    const current = filesRef.current.find((f) => f.id === nodeId);
+    if (!current) return;
+    const target: FileNode = { ...current, parentId: targetParentId, updatedAt: Date.now() };
+    setFiles((prev) => prev.map((f) => (f.id === nodeId ? target : f)));
+    await saveFileNode(target);
   }, []);
 
   const handleDeleteNode = useCallback(
@@ -652,15 +730,11 @@ export function App() {
   }, []);
 
   const handleRenameProject = useCallback(async (projectId: string, newName: string) => {
-    let updated: Project | null = null;
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id !== projectId) return p;
-        updated = { ...p, name: newName, updatedAt: Date.now() };
-        return updated;
-      })
-    );
-    if (updated) await saveProject(updated);
+    const current = projectsRef.current.find((p) => p.id === projectId);
+    if (!current) return;
+    const updated: Project = { ...current, name: newName, updatedAt: Date.now() };
+    setProjects((prev) => prev.map((p) => (p.id === projectId ? updated : p)));
+    await saveProject(updated);
   }, []);
 
   const handleDeleteProject = useCallback(
