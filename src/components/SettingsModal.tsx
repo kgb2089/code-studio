@@ -27,6 +27,7 @@ interface SettingsModalProps {
   onResetWorker: (lang: Language) => void;
   onExportAllBackup: () => void;
   onImportBackupZip: (file: File) => void;
+  onRefreshApp: () => void;
   onOpenDialog: (dialog: DialogRequest) => void;
 }
 
@@ -54,6 +55,7 @@ export function SettingsModal({
   onResetWorker,
   onExportAllBackup,
   onImportBackupZip,
+  onRefreshApp,
   onOpenDialog,
 }: SettingsModalProps) {
   const backupInputRef = useRef<HTMLInputElement | null>(null);
@@ -316,6 +318,15 @@ export function SettingsModal({
               >
                 <Upload className="w-3.5 h-3.5" />
                 <span>백업 불러오기 (ZIP)</span>
+              </button>
+              <button
+                type="button"
+                onClick={onRefreshApp}
+                title="내 파일과 오프라인 엔진은 유지하고 최신 앱 화면만 즉시 불러옵니다"
+                className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] border border-[var(--border-strong)] text-[var(--text-primary)] font-semibold text-xs shrink-0"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                <span>최신 버전 새로고침</span>
               </button>
               <input
                 ref={backupInputRef}

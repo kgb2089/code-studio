@@ -103,10 +103,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. HTML 내비게이션 요청 -> Network First with Cache Fallback (업데이트 반영 + 오프라인 유지)
+  // 2. HTML 내비게이션 요청 -> Network First (no-cache로 GitHub Pages 10분 HTTP 캐시 우회)
   if (req.mode === 'navigate') {
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-cache' })
         .then(async (networkResp) => {
           if (networkResp && networkResp.ok) {
             const cache = await caches.open(APP_CACHE);

@@ -57,6 +57,7 @@ import type {
 import type { TraceResult } from './types/trace';
 import { formatCode } from './utils/formatter';
 import {
+  forceRefreshAppShell,
   isIPadOrTouchDevice,
   isStandaloneMode,
   syncThemeColor,
@@ -1440,6 +1441,14 @@ export function App() {
           showToast('전체 워크스페이스 ZIP 백업을 다운로드했습니다.');
         }}
         onImportBackupZip={handleImportProjectZip}
+        onRefreshApp={async () => {
+          if (!navigator.onLine) {
+            showToast('오프라인 상태입니다. 와이파이 연결 후 업데이트해 주세요.');
+            return;
+          }
+          showToast('최신 버전을 불러오는 중입니다...');
+          await forceRefreshAppShell();
+        }}
         onOpenDialog={setDialog}
       />
 

@@ -31,10 +31,38 @@ export async function registerServiceWorker(): Promise<void> {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
   try {
     const swUrl = new URL('./sw.js', window.location.href).href;
-    await navigator.serviceWorker.register(swUrl, { scope: './' });
+    const reg = await navigator.serviceWorker.register(swUrl, { scope: './', updateViaCache: 'none' });
+    // 앱이 다시 열릴 때 백그라운드로 새 버전 확인
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && navigator.onLine) {
+        reg.update().catch(() => {});
+      }
+    });
   } catch (err) {
     console.warn('[PWA] Service Worker 등록 실패:', err);
   }
+}
+
+/**
+ * 홈 화면 웹앱을 삭제하지 않고 화면(UI) 캐시만 비운 뒤 최신 버전으로 즉시 새로고침합니다.
+ * 사용자 코드(IndexedDB/localStorage)와 오프라인 엔진 캐시(Python/C)는 그대로 보존됩니다.
+ */
+export async function forceRefreshAppShell(): Promise<void> {
+  if ('caches' in window) {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys
+        .filter((k) => k.startsWith('code-studio-app-'))
+        .map((k) => caches.delete(k))
+    );
+  }
+  if ('serviceWorker' in navigator) {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg) {
+      await reg.update().catch(() => {});
+    }
+  }
+  window.location.reload();
 }
 
 /**
